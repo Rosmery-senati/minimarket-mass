@@ -16,15 +16,13 @@ require_once __DIR__ . '/../config/conexion.php';
 class ProductoRepository {
 
     /**
-     * Devuelve TODOS los productos del catálogo desde la BD. 
+     * Devuelve TODOS los productos del catálogo desde la BD.
      * @return Producto[]
      */
     public function obtenerTodos(): array {
         try {
             $pdo = getConexion();
 
-            // codigo_barras AS codigo → la columna real es codigo_barras,
-            // pero la clase Producto espera "codigo". El alias los empata.
             $stmt = $pdo->query(
                 "SELECT codigo_barras AS codigo, nombre, precio, stock
                  FROM productos
@@ -36,8 +34,8 @@ class ProductoRepository {
                 $productos[] = new Producto(
                     $f['codigo'],
                     $f['nombre'],
-                    (float) $f['precio'],   // MySQL devuelve TODO como string
-                    (int)   $f['stock']     // por eso casteamos a float/int
+                    (float) $f['precio'],
+                    (int)   $f['stock']
                 );
             }
             return $productos;
@@ -50,7 +48,6 @@ class ProductoRepository {
 
     /**
      * Busca UN producto por su código.
-     * Usa PREPARED STATEMENT → seguro contra SQL injection.
      */
     public function buscarPorCodigo(string $codigo): ?Producto {
         try {
@@ -78,6 +75,154 @@ class ProductoRepository {
         } catch (PDOException $e) {
             error_log('[ProductoRepository::buscarPorCodigo] ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Busca productos cuyo nombre contenga el término indicado.
+     * @return Producto[]
+     */
+    public function buscarPorNombre(string $termino): array {
+        try {
+            $pdo = getConexion();
+
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 WHERE nombre LIKE :termino
+                 ORDER BY nombre"
+            );
+            $stmt->execute([':termino' => '%' . $termino . '%']);
+
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::buscarPorNombre] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Devuelve los productos de una categoría específica.
+     * @return Producto[]
+     */
+    public function obtenerPorCategoria(int $categoriaId): array {
+        try {
+            $pdo = getConexion();
+
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 WHERE categoria_id = :id
+                 ORDER BY nombre"
+            );
+            $stmt->execute([':id' => $categoriaId]);
+
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::obtenerPorCategoria] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Devuelve productos con stock por debajo del umbral, ordenados de menor a mayor.
+     * @return Producto[]
+     */
+    public function obtenerBajoStock(int $umbral): array {
+        try {
+            $pdo = getConexion();
+
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 WHERE stock < :umbral
+                 ORDER BY stock ASC"
+            );
+            $stmt->execute([':umbral' => $umbral]);
+
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::obtenerBajoStock] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Devuelve el total de productos en la tabla como entero.
+     */
+    public function contarTotalProductos(): int {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->query("SELECT COUNT(*) FROM productos");
+            return (int) $stmt->fetchColumn();
+
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::contarTotalProductos] ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * BONUS: Devuelve los N productos más caros del catálogo.
+     * @return Producto[]
+     */
+    public function obtenerMasCaros(int $limite): array {
+        try {
+            $pdo = getConexion();
+
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 ORDER BY precio DESC
+                 LIMIT :limite"
+            );
+            $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::obtenerMasCaros] ' . $e->getMessage());
+            return [];
         }
     }
 }
