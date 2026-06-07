@@ -9,10 +9,14 @@ class AuthController {
     }
 
     public function procesarLogin(): void {
-        // Bloqueo si ya superó 3 intentos
-        if (($_SESSION['intentos'] ?? 0) >= 3) {
+        if (isset($_SESSION['bloqueo_hasta']) && time() < $_SESSION['bloqueo_hasta']) {
             $this->mostrarLogin('Demasiados intentos. Intenta más tarde.');
             return;
+        }
+
+        if (isset($_SESSION['bloqueo_hasta']) && time() >= $_SESSION['bloqueo_hasta']) {
+            $_SESSION['intentos']      = 0;
+            $_SESSION['bloqueo_hasta'] = null;
         }
 
         $username = trim($_POST['username'] ?? '');
@@ -30,21 +34,27 @@ class AuthController {
             $_SESSION['intentos'] = ($_SESSION['intentos'] ?? 0) + 1;
 
             if ($_SESSION['intentos'] >= 3) {
+                $_SESSION['bloqueo_hasta'] = time() + 60;
                 $this->mostrarLogin('Demasiados intentos. Intenta más tarde.');
                 return;
             }
 
-            $this->mostrarLogin('Usuario o contraseña incorrectos.');
+            $restantes = 3 - $_SESSION['intentos'];
+            $this->mostrarLogin("Usuario o contraseña incorrectos. Intentos restantes: {$restantes}.");
             return;
         }
 
-        $_SESSION['intentos'] = 0;
+        $repo->registrarAcceso($usuario->getId());
+
+        $_SESSION['intentos']      = 0;
+        $_SESSION['bloqueo_hasta'] = null;
         $_SESSION['usuario'] = [
-            'id'       => $usuario->getId(),
-            'username' => $usuario->getUsername(),
-            'nombre'   => $usuario->getNombreCompleto(),
-            'rol'      => $usuario->getRol(),
-            'tienda'   => $usuario->getTienda(),
+            'id'            => $usuario->getId(),
+            'username'      => $usuario->getUsername(),
+            'nombre'        => $usuario->getNombreCompleto(),
+            'rol'           => $usuario->getRol(),
+            'tienda'        => $usuario->getTienda(),
+            'ultimo_acceso' => date('d/m/Y H:i'),
         ];
 
         header('Location: index.php?accion=catalogo');
