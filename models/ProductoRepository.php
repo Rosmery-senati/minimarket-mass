@@ -52,17 +52,130 @@ class ProductoRepository {
         }
     }
 
-    // Método crear() — agrega un producto nuevo a la BD
-    public function crear(array $datos): bool {
+    public function buscarPorNombre(string $termino): array {
         try {
-            $pdo  = getConexion();
+            $pdo = getConexion();
             $stmt = $pdo->prepare(
-                "INSERT INTO productos 
-                    (codigo_barras, nombre, marca, categoria_id, precio, stock)
-                 VALUES 
-                    (:codigo, :nombre, :marca, :categoria, :precio, :stock)"
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 WHERE nombre LIKE :termino
+                 ORDER BY nombre"
             );
-            return $stmt->execute([
+            $stmt->execute([':termino' => '%' . $termino . '%']);
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::buscarPorNombre] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function obtenerPorCategoria(int $categoriaId): array {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 WHERE categoria_id = :id
+                 ORDER BY nombre"
+            );
+            $stmt->execute([':id' => $categoriaId]);
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::obtenerPorCategoria] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function obtenerBajoStock(int $umbral): array {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 WHERE stock < :umbral
+                 ORDER BY stock ASC"
+            );
+            $stmt->execute([':umbral' => $umbral]);
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::obtenerBajoStock] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function contarTotalProductos(): int {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->query("SELECT COUNT(*) FROM productos");
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::contarTotalProductos] ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function obtenerMasCaros(int $limite): array {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->prepare(
+                "SELECT codigo_barras AS codigo, nombre, precio, stock
+                 FROM productos
+                 ORDER BY precio DESC
+                 LIMIT :limite"
+            );
+            $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+            $stmt->execute();
+            $productos = [];
+            foreach ($stmt->fetchAll() as $f) {
+                $productos[] = new Producto(
+                    $f['codigo'],
+                    $f['nombre'],
+                    (float) $f['precio'],
+                    (int)   $f['stock']
+                );
+            }
+            return $productos;
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::obtenerMasCaros] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function crear(array $datos): void {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->prepare(
+                "INSERT INTO productos (codigo_barras, nombre, marca, categoria_id, precio, stock)
+                 VALUES (:codigo, :nombre, :marca, :categoria, :precio, :stock)"
+            );
+            $stmt->execute([
                 ':codigo'    => $datos['codigo'],
                 ':nombre'    => $datos['nombre'],
                 ':marca'     => $datos['marca'],
@@ -72,7 +185,35 @@ class ProductoRepository {
             ]);
         } catch (PDOException $e) {
             error_log('[ProductoRepository::crear] ' . $e->getMessage());
-            return false;
+        }
+    }
+
+    public function actualizar(Producto $producto): void {
+        try {
+            $pdo = getConexion();
+            $stmt = $pdo->prepare(
+                "UPDATE productos
+                 SET nombre = :nombre, precio = :precio, stock = :stock
+                 WHERE codigo_barras = :codigo"
+            );
+            $stmt->execute([
+                ':nombre' => $producto->getNombre(),
+                ':precio' => $producto->getPrecio(),
+                ':stock'  => $producto->getStock(),
+                ':codigo' => $producto->getCodigo(),
+            ]);
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::actualizar] ' . $e->getMessage());
+        }
+    }
+
+    public function eliminar(string $codigo): void {
+        try {
+            $pdo  = getConexion();
+            $stmt = $pdo->prepare("DELETE FROM productos WHERE codigo_barras = :codigo");
+            $stmt->execute([':codigo' => $codigo]);
+        } catch (PDOException $e) {
+            error_log('[ProductoRepository::eliminar] ' . $e->getMessage());
         }
     }
 }

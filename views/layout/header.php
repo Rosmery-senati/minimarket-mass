@@ -29,7 +29,7 @@
         .btn-salir:hover { background: #e6a500; }
 
         /* LAYOUT */
-        .contenedor { display: flex; flex: 1; }
+        .contenedor, .mass-contenedor { display: flex; flex: 1; }
 
         /* SIDEBAR */
         .sidebar {
@@ -54,7 +54,7 @@
         .sidebar-link.activo { background: #0066B3; color: #fff; font-weight: 700; }
 
         /* MAIN */
-        main {
+        main, .mass-main {
             flex: 1;
             padding: 28px 32px;
         }
@@ -73,6 +73,40 @@
         tr:hover td { background: #f0f6ff; }
         .precio { font-weight: 700; color: #0066B3; }
         .sin-stock { color: #dc2626; font-weight: 600; }
+
+        /* ACCIONES */
+        td a {
+            color: #0066B3;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        td a:hover { text-decoration: underline; }
+
+        /* FORMULARIO */
+        .mass-form { max-width: 500px; display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+        .mass-form label { font-weight: 600; font-size: 14px; color: #1a2230; }
+        .mass-form input {
+            padding: 10px 12px; border: 1px solid #dce6f0;
+            border-radius: 8px; font-size: 14px; width: 100%;
+        }
+        .mass-form input[readonly] { background: #f4f6f9; color: #888; }
+        .mass-form button {
+            background: #0066B3; color: #fff;
+            padding: 11px; border: none;
+            border-radius: 8px; font-weight: 700;
+            font-size: 15px; cursor: pointer;
+        }
+        .mass-form button:hover { background: #004F8C; }
+        .mass-form a {
+            text-align: center; color: #0066B3;
+            font-weight: 600; text-decoration: none; font-size: 14px;
+        }
+        .alerta-error {
+            background: #fef2f2; border: 1px solid #f3c2c2;
+            color: #dc2626; padding: 12px 16px;
+            border-radius: 8px; font-size: 14px; margin-bottom: 8px;
+        }
 
         /* FOOTER */
         .footer {

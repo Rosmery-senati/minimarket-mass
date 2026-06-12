@@ -8,6 +8,12 @@
        class="sidebar-link <?= $accionActual === 'nuevo-producto' ? 'activo' : '' ?>">
         ➕ Nuevo producto
     </a>
-    <a href="#" class="sidebar-link">✏️ Editar</a>
-    <a href="#" class="sidebar-link">📊 Reportes</a>
+    <a href="index.php?accion=editar-producto"
+       class="sidebar-link <?= $accionActual === 'editar-producto' ? 'activo' : '' ?>">
+        ✏️ Editar
+    </a>
+    <a href="index.php?accion=reportes"
+       class="sidebar-link <?= $accionActual === 'reportes' ? 'activo' : '' ?>">
+        📊 Reportes
+    </a>
 </aside>

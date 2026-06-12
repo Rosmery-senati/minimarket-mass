@@ -3,7 +3,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/../models/ProductoRepository.php';
 
 class ProductoController {
-
     private ProductoRepository $repo;
 
     public function __construct() {
@@ -11,7 +10,12 @@ class ProductoController {
     }
 
     public function listar(): void {
-        $productos = $this->repo->obtenerTodos();
+        $buscar = trim($_GET['buscar'] ?? '');
+        if ($buscar !== '') {
+            $productos = $this->repo->buscarPorNombre($buscar);
+        } else {
+            $productos = $this->repo->obtenerTodos();
+        }
         require __DIR__ . '/../views/productos/lista.php';
     }
 
@@ -47,4 +51,48 @@ class ProductoController {
         header('Location: index.php?accion=catalogo');
         exit;
     }
+
+    public function editar(): void {
+        $codigo = $_GET['codigo'] ?? '';
+        $producto = $this->repo->buscarPorCodigo($codigo);
+        if ($producto === null) {
+            header('Location: index.php');
+            exit;
+        }
+        require __DIR__ . '/../views/productos/editar.php';
+    }
+
+    public function actualizar(): void {
+        $codigo = $_POST['codigo'] ?? '';
+        $nombre = trim($_POST['nombre'] ?? '');
+        $precio = $_POST['precio'] ?? '';
+        $stock  = $_POST['stock']  ?? '';
+
+        if ($codigo === '' || $nombre === '' || $precio === '' || $stock === '') {
+            $error = 'Todos los campos son obligatorios.';
+            $producto = new Producto($codigo, $nombre, (float)$precio, (int)$stock);
+            require __DIR__ . '/../views/productos/editar.php';
+            return;
+        }
+
+        $producto = new Producto($codigo, $nombre, (float)$precio, (int)$stock);
+        $this->repo->actualizar($producto);
+        header('Location: index.php');
+        exit;
+    }
+
+    public function eliminar(): void {
+        $codigo = $_GET['codigo'] ?? '';
+        if ($codigo !== '') {
+            $this->repo->eliminar($codigo);
+        }
+        header('Location: index.php?accion=catalogo');
+        exit;
+    }
+    public function reportes(): void {
+    $totalProductos = $this->repo->contarTotalProductos();
+    $bajoStock      = $this->repo->obtenerBajoStock(100);
+    $masCaros       = $this->repo->obtenerMasCaros(5);
+    require __DIR__ . '/../views/productos/reportes.php';
+}
 }
