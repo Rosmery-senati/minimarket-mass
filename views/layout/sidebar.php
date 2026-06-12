@@ -16,4 +16,8 @@
        class="sidebar-link <?= $accionActual === 'reportes' ? 'activo' : '' ?>">
         📊 Reportes
     </a>
+    <a href="index.php?accion=reporte-pdf" target="_blank"
+       class="sidebar-link">
+        🧾 Reporte PDF
+    </a>
 </aside>

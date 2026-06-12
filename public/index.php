@@ -4,6 +4,8 @@ session_start();
 require_once __DIR__ . '/../helpers/sesion.php';
 require_once __DIR__ . '/../controllers/AuthController.php';
 require_once __DIR__ . '/../controllers/ProductoController.php';
+require_once __DIR__ . '/../controllers/ReporteController.php';
+
 
 $accion = $_GET['accion'] ?? 'catalogo';
 $auth   = new AuthController();
@@ -33,6 +35,10 @@ switch ($accion) {
     case 'actualizar-producto':
         requiereLogin();
         (new ProductoController())->actualizar();
+        break;
+    case 'reporte-pdf':
+        requiereLogin();
+        (new ReporteController())->catalogoPdf();
         break;
     case 'eliminar-producto':
         requiereLogin();
